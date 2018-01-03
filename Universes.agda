@@ -247,19 +247,19 @@ module Universes where
 
     data BadTerm (Γ : Cxt) : Set where
       var : Nat → BadTerm Γ
-      _l$_ : BadTerm Γ → Raw → BadTerm Γ
-      _$r_ : Raw → BadTerm Γ → BadTerm Γ
+      _l$_ : forall {σ} → BadTerm Γ → Term Γ σ → BadTerm Γ
+      _$r_ : forall {σ} → Term Γ σ → BadTerm Γ → BadTerm Γ
       _l$r_ : BadTerm Γ → BadTerm Γ → BadTerm Γ
-      _ι$_ : Raw → Raw → BadTerm Γ
+      _ι$_ : forall {σ} → Term Γ ι → Term Γ σ → BadTerm Γ
       _$_ : forall {σ τ δ} → Term Γ (σ ⇒ δ) → Term Γ τ → σ ≠ τ → BadTerm Γ
       lam : forall {σ} → BadTerm (σ :: Γ) → BadTerm Γ
 
     eraseBad : forall {Γ} → BadTerm Γ → Raw
     eraseBad {Γ} (var x) = var (length Γ + x)
-    eraseBad (t l$ x) = eraseBad t $ x
-    eraseBad (x $r t) = x $ eraseBad t
+    eraseBad (t l$ x) = eraseBad t $ erase x
+    eraseBad (x $r t) = erase x $ eraseBad t
     eraseBad (t l$r t₁) = eraseBad t $ eraseBad t₁
-    eraseBad (x ι$ y) = x $ y
+    eraseBad (x ι$ y) = erase x $ erase y
     eraseBad ((t₁ $ t₂) _) = erase t₁ $ erase t₂
     eraseBad (lam {σ} t) = lam σ (eraseBad t)
 
@@ -273,13 +273,13 @@ module Universes where
     infer Γ (var .(length Γ + m)) | outside m = bad (var m)
     
     infer Γ (t $ t₁) with infer Γ t | infer Γ t₁
-    infer Γ (.(erase t) $ .(erase t₁)) | ok ι t | ok τ₁ t₁ = bad (erase t  ι$ erase t₁)
+    infer Γ (.(erase t) $ .(erase t₁)) | ok ι t | ok τ₁ t₁ = bad (t ι$ t₁)
     infer Γ (.(erase t) $ .(erase t₁)) | ok (τ ⇒ σ) t | ok τ₁ t₁
       with τ =?= τ₁
     infer Γ (.(erase t) $ .(erase t₁)) | ok (.τ₁ ⇒ σ) t | ok τ₁ t₁ | yes = ok σ (t $ t₁)
     infer Γ (.(erase t) $ .(erase t₁)) | ok (τ ⇒ σ) t | ok τ₁ t₁ | no x = bad ((t $ t₁) x)
-    infer Γ (.(erase t) $ .(eraseBad b)) | ok τ t | bad b = bad (erase t $r b)
-    infer Γ (.(eraseBad b) $ .(erase t)) | bad b | ok τ t = bad (b l$ erase t)
+    infer Γ (.(erase t) $ .(eraseBad b)) | ok τ t | bad b = bad (t $r b)
+    infer Γ (.(eraseBad b) $ .(erase t)) | bad b | ok τ t = bad (b l$ t)
     infer Γ (.(eraseBad b) $ .(eraseBad b₁)) | bad b | bad b₁ = bad (b l$r b₁)
     
     infer Γ (lam σ t) with infer (σ :: Γ) t
