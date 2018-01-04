@@ -180,17 +180,24 @@ module Universes where
     compare : (n m : Nat) → Compare n m
     compare zero zero = same
     compare zero (suc m) = less m
-    compare (suc n) m with compare n m
-    compare (suc n) .(n + 1) | less zero
-      rewrite comm-plus-suc {n} {0} | plus-zero {n} = same
-    compare (suc n) .(n + suc (suc k)) | less (suc k)
-      rewrite comm-plus-suc {n} {suc k} = less k
-    compare (suc .(m + suc k)) m | more k
-      rewrite ≡-exchg (comm-plus-suc {m} {suc k}) = more (suc k)
-    compare (suc n) .n | same
-      rewrite ≡-exchg (plus-zero {n})
-      | ≡-exchg (comm-plus-suc {n} {0})
-      | plus-zero {n} = more zero
+    compare (suc n) zero = more n
+    compare (suc n) (suc m) with compare n m
+    compare (suc n) (suc .(n + suc k)) | less k = less k
+    compare (suc .(m + suc k)) (suc m) | more k = more k
+    compare (suc n) (suc .n) | same = same
+    -- compare zero zero = same
+    -- compare zero (suc m) = less m
+    -- compare (suc n) m with compare n m
+    -- compare (suc n) .(n + 1) | less zero
+    --   rewrite comm-plus-suc {n} {0} | plus-zero {n} = same
+    -- compare (suc n) .(n + suc (suc k)) | less (suc k)
+    --   rewrite comm-plus-suc {n} {suc k} = less k
+    -- compare (suc .(m + suc k)) m | more k
+    --   rewrite ≡-exchg (comm-plus-suc {m} {suc k}) = more (suc k)
+    -- compare (suc n) .n | same
+    --   rewrite ≡-exchg (plus-zero {n})
+    --   | ≡-exchg (comm-plus-suc {n} {0})
+    --   | plus-zero {n} = more zero
     
     difference : Nat → Nat → Nat
     difference n m with compare n m
